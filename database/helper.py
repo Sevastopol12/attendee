@@ -26,7 +26,7 @@ def presence_check(seat: str) -> pd.DataFrame:
 
 
 def insert_data(data: Dict[str, Any]) -> None:
-    data["check_in"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M%S")
+    data["check_in"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
     create_schema_and_table()
 
     with db_connection.conn.connect() as connection:
