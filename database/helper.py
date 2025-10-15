@@ -1,6 +1,6 @@
 import datetime
 import pandas as pd
-from typing import Dict, Any
+from typing import Dict, Any, List
 from database.connection import db_connection
 from sqlalchemy import text, Table, String, Column, MetaData
 
@@ -45,6 +45,20 @@ def insert_data(data: Dict[str, Any]) -> None:
             print(e)
             connection.rollback()
             return "N/A"
+
+
+def attended_count() -> List[Dict[str, Any]]:
+    with db_connection.conn.connect() as connection:
+        try:
+            select_stmt: str = """
+            SELECT * FROM attendees.presence 
+            ORDER BY seat
+            """
+
+            return pd.read_sql(select_stmt, con=connection).to_dict("records")
+
+        except Exception:
+            return []
 
 
 if __name__ == "__main__":
