@@ -58,7 +58,7 @@ async def attended(websocket: WebSocket):
     try:
         while True:
             attended: List[Dict[str, Any]] = attended_count()
-            websocket.send_json(data=attended)
+            await websocket.send_json(data=attended)
     except Exception as e:
         print("⚠ Unexpected error:", e)
         try:
