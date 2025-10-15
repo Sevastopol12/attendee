@@ -38,7 +38,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 await websocket.send_text("Missing required keys: seat, name")
                 continue
 
-            await insert_data(data=payload)
+            insert_data(data=payload)
+            
             await websocket.send_text(f"✔ Saved data for seat {payload['seat']}")
 
     except WebSocketDisconnect:
@@ -50,4 +51,3 @@ async def websocket_endpoint(websocket: WebSocket):
             await websocket.close()
         except Exception:
             pass    
-        

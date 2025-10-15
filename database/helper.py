@@ -19,19 +19,19 @@ def create_schema_and_table() -> None:
         metadata.create_all(connection, tables=[attendee_table], checkfirst=True)
 
 
-async def presence_check(seat: str) -> pd.DataFrame:
+def presence_check(seat: str) -> pd.DataFrame:
     with db_connection.conn.connect() as connection:
         stmt: str = """SELECT seat FROM attendees.presence WHERE seat = :pattern"""
         return pd.read_sql(text(stmt), con=connection, params={"pattern": seat})
 
 
-async def insert_data(data: Dict[str, Any]) -> None:
+def insert_data(data: Dict[str, Any]) -> None:
     data["check_in"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M%S")
     create_schema_and_table()
 
     with db_connection.conn.connect() as connection:
         try:
-            if not await presence_check(seat=data["seat"]).empty:
+            if not presence_check(seat=data["seat"]).empty:
                 return
 
             insert_stmt: str = """
