@@ -51,13 +51,15 @@ def attended_count() -> List[Dict[str, Any]]:
     with db_connection.conn.connect() as connection:
         try:
             select_stmt: str = """
-            SELECT * FROM attendees.presence 
+            SELECT seat, name, check_in FROM attendees.presence 
+            WHERE 1=1
             ORDER BY seat
             """
 
-            return pd.read_sql(select_stmt, con=connection).to_dict("records")
+            return pd.read_sql(text(select_stmt), con=connection).to_dict("records")
 
         except Exception:
+            connection.rollback()
             return []
 
 
