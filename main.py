@@ -54,7 +54,7 @@ async def presence(websocket: WebSocket):
 
 @app.websocket("/attend")
 async def attended(websocket: WebSocket):
-    await websocket.connect()
+    await websocket.accept()
     try:
         while True:
             attended: List[Dict[str, Any]] = attended_count()
