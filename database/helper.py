@@ -12,7 +12,7 @@ def create_schema_and_table() -> None:
         attendee_table: Table = Table(
             "presence",
             metadata,
-            Column("seat", String, unique=True, nullable=False),
+            Column("seat", String, unique=True, nullable=False, primary_key=True),
             Column("name", String, nullable=False),
             Column("check_in", String, nullable=False),
         )
