@@ -25,11 +25,13 @@ def presence_check(seat: str) -> pd.DataFrame:
         return pd.read_sql(text(stmt), con=conn, params={"pattern": seat})
 
 
-def insert_data(data: Dict[str, Any]) -> None:
+def insert_data(data: Dict[str, Any]) -> bool:
+    """Update attendee's presence, return True if added successfully"""
     data["check_in"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
 
     if not presence_check(seat=data["seat"]).empty:
-        return
+        # If present, no update
+        return False
 
     insert_stmt: str = """
     INSERT INTO attendees.presence (seat, name, check_in) VALUES (:seat, :name, :check_in)
@@ -38,12 +40,12 @@ def insert_data(data: Dict[str, Any]) -> None:
     with connection.engine.begin() as conn:
         try:
             conn.execute(text(insert_stmt), parameters=data)
-            return
+            return True
 
         except Exception as e:
             print(e)
             conn.rollback()
-            return "N/A"
+            return False
 
 
 def attended_count() -> List[Dict[str, Any]]:

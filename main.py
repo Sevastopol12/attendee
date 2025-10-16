@@ -42,11 +42,6 @@ class Clients:
         for client in self.active_clients:
             await client.send_json(self.attendees)
 
-    async def add_attendee(self, payload: Dict[str, Any]):
-        """Update attendance & broadcast changes"""
-        # self.attendees.append(payload)
-        await self.broadcast_db()
-
     async def remove_client(self, ws_client: WebSocket):
         if ws_client in self.active_clients:
             self.active_clients.remove(ws_client)
@@ -72,9 +67,14 @@ async def ws_endpoint(ws_client: WebSocket):
                 await ws_client.send_text("Missing required keys: seat, name")
                 continue
 
-            insert_data(data=info_payload)
-            await connected_clients.add_attendee(payload=info_payload)
-            
+            # Insert data
+            status: bool = insert_data(data=info_payload)
+            if not status:
+                # If already presented, no broadcast needed
+                continue
+
+            await connected_clients.broadcast_db()
+
         except (WebSocketDisconnect, Exception) as e:
             print(e)
             await connected_clients.remove_client(ws_client=ws_client)
