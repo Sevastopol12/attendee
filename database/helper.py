@@ -1,13 +1,13 @@
 import datetime
 import pandas as pd
 from typing import Dict, Any, List
-from database.connection import db_connection
+from database.connection import connection
 from sqlalchemy import text, Table, String, Column, MetaData
 
 
 def create_schema_and_table() -> None:
-    with db_connection.conn.begin() as connection:
-        connection.execute(text("CREATE SCHEMA IF NOT EXISTS attendees"))
+    with connection.engine.begin() as conn:
+        conn.execute(text("CREATE SCHEMA IF NOT EXISTS attendees"))
         metadata = MetaData("attendees")
         attendee_table: Table = Table(
             "presence",
@@ -16,39 +16,38 @@ def create_schema_and_table() -> None:
             Column("name", String, nullable=False),
             Column("check_in", String, nullable=False),
         )
-        metadata.create_all(connection, tables=[attendee_table], checkfirst=True)
+        metadata.create_all(conn, tables=[attendee_table], checkfirst=True)
 
 
 def presence_check(seat: str) -> pd.DataFrame:
-    with db_connection.conn.connect() as connection:
+    with connection.engine.connect() as conn:
         stmt: str = """SELECT seat FROM attendees.presence WHERE seat = :pattern"""
-        return pd.read_sql(text(stmt), con=connection, params={"pattern": seat})
+        return pd.read_sql(text(stmt), con=conn, params={"pattern": seat})
 
 
 def insert_data(data: Dict[str, Any]) -> None:
     data["check_in"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-    create_schema_and_table()
 
-    with db_connection.conn.connect() as connection:
+    if not presence_check(seat=data["seat"]).empty:
+        return
+
+    insert_stmt: str = """
+    INSERT INTO attendees.presence (seat, name, check_in) VALUES (:seat, :name, :check_in)
+    """
+
+    with connection.engine.begin() as conn:
         try:
-            if not presence_check(seat=data["seat"]).empty:
-                return
-
-            insert_stmt: str = """
-            INSERT INTO attendees.presence (seat, name, check_in) VALUES (:seat, :name, :check_in)
-            """
-            connection.execute(text(insert_stmt), parameters=data)
-            connection.commit()
+            conn.execute(text(insert_stmt), parameters=data)
             return
 
         except Exception as e:
             print(e)
-            connection.rollback()
+            conn.rollback()
             return "N/A"
 
 
 def attended_count() -> List[Dict[str, Any]]:
-    with db_connection.conn.connect() as connection:
+    with connection.engine.connect() as conn:
         try:
             select_stmt: str = """
             SELECT seat, name, check_in FROM attendees.presence 
@@ -56,10 +55,10 @@ def attended_count() -> List[Dict[str, Any]]:
             ORDER BY seat
             """
 
-            return pd.read_sql(text(select_stmt), con=connection).to_dict("records")
+            return pd.read_sql(text(select_stmt), con=conn).to_dict("records")
 
         except Exception:
-            connection.rollback()
+            conn.rollback()
             return []
 
 

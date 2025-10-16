@@ -1,8 +1,12 @@
 import json
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from database.helper import insert_data, attended_count
+from database.helper import insert_data, attended_count, create_schema_and_table
 from typing import List, Dict, Any
+
+
+create_schema_and_table()
+
 
 app = FastAPI()
 
@@ -21,60 +25,58 @@ app.add_middleware(
 )
 
 
+# Management system
 class Clients:
     def __init__(self):
         self.active_clients: List[WebSocket] = []
+        self.attendees: List[Dict[str, Any]] = attended_count()
 
-    async def add_client(self, websocket: WebSocket):
-        self.active_clients.append(websocket)
-        attended: List[Dict[str, Any]] = attended_count()
-        await websocket.send_json(attended)
+    async def add_client(self, ws_client: WebSocket):
+        """Perform handshake with client then give them the current attendee list"""
+        self.active_clients.append(ws_client)
+        await ws_client.send_json(self.attendees)
 
     async def broadcast_db(self):
-        attended: List[Dict[str, Any]] = attended_count()
-        async for client in self.active_clients:
-            await client.send_json(attended)
+        """Broadcast changes"""
+        self.attendees = attended_count()
+        for client in self.active_clients:
+            await client.send_json(self.attendees)
 
-    async def update_db(self, payload: json):
-        """Insert new record to DB and broadcast changes"""
-        await insert_data(data=payload)
+    async def add_attendee(self, payload: Dict[str, Any]):
+        """Update attendance & broadcast changes"""
+        # self.attendees.append(payload)
         await self.broadcast_db()
 
-    def remove_client(self, websocket: WebSocket):
-        if websocket in self.active_clients:
-            self.active_clients.remove(websocket)
+    async def remove_client(self, ws_client: WebSocket):
+        if ws_client in self.active_clients:
+            self.active_clients.remove(ws_client)
 
 
-connected_clients = Clients()
+connected_clients: Clients = Clients()
 
 
+# Server websocket APIs
 @app.websocket("/presence")
-async def presence(websocket: WebSocket):
-    await websocket.accept()
-    await connected_clients.add_client(websocket)
+async def ws_endpoint(ws_client: WebSocket):
+    await ws_client.accept()
+    await connected_clients.add_client(ws_client=ws_client)
+    print("WebSocket connected")
 
-    try:
-        while True:
-            data = await websocket.receive_text()
-            # Validate data format
-            try:
-                payload = json.loads(data)
-            except json.JSONDecodeError:
-                await websocket.send_text("Invalid JSON format")
-                continue
-
-            if not all(k in payload for k in ("seat", "name")):
-                await websocket.send_text("Missing required keys: seat, name")
-                continue
-
-            await connected_clients.update_db(payload=payload)
-
-    except WebSocketDisconnect:
-        connected_clients.remove_client(websocket)
-
-    except Exception:
-        connected_clients.remove_client(websocket)
+    while True:
         try:
-            await websocket.close()
-        except Exception:
-            pass
+            attendee_info: json = await ws_client.receive_text()
+            print(f"Received: {attendee_info}")
+            info_payload = json.loads(attendee_info)
+
+            if not all(k in info_payload for k in ("seat", "name")):
+                await ws_client.send_text("Missing required keys: seat, name")
+                continue
+
+            insert_data(data=info_payload)
+            await connected_clients.add_attendee(payload=info_payload)
+            
+        except (WebSocketDisconnect, Exception) as e:
+            print(e)
+            await connected_clients.remove_client(ws_client=ws_client)
+            print(f"{ws_client} disconnected")
+            break
