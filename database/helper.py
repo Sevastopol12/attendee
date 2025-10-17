@@ -1,4 +1,5 @@
-import datetime
+from datetime import datetime
+from zoneinfo import ZoneInfo
 import pandas as pd
 from typing import Dict, Any, List
 from database.connection import connection
@@ -27,7 +28,7 @@ def presence_check(seat: str) -> pd.DataFrame:
 
 def insert_data(data: Dict[str, Any]) -> bool:
     """Update attendee's presence, return True if added successfully"""
-    data["check_in"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+    data["check_in"] = datetime.now(ZoneInfo("Asia/Bangkok")).strftime("%Y-%m-%d %H:%M")
 
     if not presence_check(seat=data["seat"]).empty:
         # If present, no update
