@@ -1,14 +1,27 @@
 import json
+import asyncio
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from database.helper import insert_data, attended_count, create_schema_and_table
-from typing import List, Dict, Any
+from database.helper import create_schema_and_table, insert_data
+from contextlib import asynccontextmanager
+from utils.management_sys import connected_clients
 
 
-create_schema_and_table()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    tasks = [
+        # Create schem & tables
+        asyncio.create_task(create_schema_and_table()),
+        # Fetch data on initial
+        asyncio.create_task(connected_clients.fetch_db()),
+    ]
+    await asyncio.gather(*tasks, return_exceptions=True)
+
+    yield
 
 
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
+
 
 # Allow both frontend URLs
 app.add_middleware(
@@ -25,31 +38,6 @@ app.add_middleware(
 )
 
 
-# Management system
-class Clients:
-    def __init__(self):
-        self.active_clients: List[WebSocket] = []
-        self.attendees: List[Dict[str, Any]] = attended_count()
-
-    async def add_client(self, ws_client: WebSocket):
-        """Perform handshake with client then give them the current attendee list"""
-        self.active_clients.append(ws_client)
-        await ws_client.send_json(self.attendees)
-
-    async def broadcast_db(self):
-        """Broadcast changes"""
-        self.attendees = attended_count()
-        for client in self.active_clients:
-            await client.send_json(self.attendees)
-
-    async def remove_client(self, ws_client: WebSocket):
-        if ws_client in self.active_clients:
-            self.active_clients.remove(ws_client)
-
-
-connected_clients: Clients = Clients()
-
-
 # Server websocket APIs
 @app.websocket("/presence")
 async def ws_endpoint(ws_client: WebSocket):
@@ -59,7 +47,7 @@ async def ws_endpoint(ws_client: WebSocket):
 
     while True:
         try:
-            attendee_info: json = await ws_client.receive_text()
+            attendee_info: str = await ws_client.receive_text()
             print(f"Received: {attendee_info}")
             info_payload = json.loads(attendee_info)
 
@@ -68,12 +56,12 @@ async def ws_endpoint(ws_client: WebSocket):
                 continue
 
             # Insert data
-            status: bool = insert_data(data=info_payload)
+            status: bool = await insert_data(payload=info_payload)
             if not status:
                 # If already presented, no broadcast needed
                 continue
 
-            await connected_clients.broadcast_db()
+            await connected_clients.schedule_broadcast_action()
 
         except (WebSocketDisconnect, Exception) as e:
             print(e)

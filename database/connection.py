@@ -1,11 +1,11 @@
 import os
-from sqlalchemy import create_engine, Engine
-
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine
 
 class Connection:
-    websocket_uri: str = os.getenv("WS_URI")
-    connection_string: str = os.getenv("DATABASE_URI")
-    engine: Engine = create_engine(url=connection_string)
+    project_url: str = os.environ["PROJECT_URL"]
+    key: str = os.environ["KEY"]
+    connection_string: str = os.environ["DATABASE_URI"]
+    engine: AsyncEngine = create_async_engine(url=connection_string, pool_pre_ping=True)
 
 
 connection: Connection = Connection()
