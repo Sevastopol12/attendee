@@ -11,11 +11,11 @@ dependencies = [
     "fastapi[standard]>=0.119.0",
     "pandas>=2.3.3",
     "pg>=0.1",
-    "psycopg2>=2.9.11",
     "pydantic==2.9.2",
     "pydantic-core==2.23.4",
     "qrcode[pil]>=8.2",
     "sqlalchemy>=2.0.44",
+    "supabase>=2.22.0",
     "uvicorn==0.32.0",
     "websockets>=15.0.1",
 ]
