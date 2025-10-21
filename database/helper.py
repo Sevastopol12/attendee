@@ -17,7 +17,7 @@ async def create_schema_and_table() -> None:
             Column("check_in", String, nullable=False),
             schema="attendees",
         )
-        
+
         await conn.run_sync(
             metadata.create_all, tables=[attendee_table], checkfirst=True
         )
@@ -29,13 +29,15 @@ async def presence_check(seat: str) -> List[RowMapping]:
         presented: List[Row] = (
             await conn.execute(text(stmt), parameters={"pattern": seat})
         ).fetchall()
-        
+
         return presented
 
 
 async def insert_data(payload: Dict[str, Any]) -> bool:
     """Update attendee's presence, return True if added successfully"""
-    payload["check_in"] = datetime.now(ZoneInfo("Asia/Bangkok")).strftime("%Y-%m-%d %H:%M")
+    payload["check_in"] = datetime.now(ZoneInfo("Asia/Bangkok")).strftime(
+        "%Y-%m-%d %H:%M"
+    )
 
     if await presence_check(seat=payload["seat"]):
         # If present, no update
@@ -62,14 +64,14 @@ async def attended_count() -> List[Dict[Hashable, Any]]:
             select_stmt: str = """
             SELECT seat, name, check_in FROM attendees.presence 
             WHERE 1=1
-            ORDER BY seat ASC
+            ORDER BY seat
             """
 
-            result: List[RowMapping] = (await conn.execute(text(select_stmt))).mappings().all()
-            presented: List[Dict[Hashable, Any]] = [
-                dict(data) for data in result
-            ]
-            
+            result: List[RowMapping] = (
+                (await conn.execute(text(select_stmt))).mappings().all()
+            )
+            presented: List[Dict[Hashable, Any]] = [dict(data) for data in result]
+
             return presented
 
         except Exception:
