@@ -25,6 +25,12 @@ wheels = [
 ]
 
 [[package]]
+name = "async"
+version = "0.6.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/47/de/9d8e0907842c56d4cbd64d7543e65f78373d1fe8e9dc33a4324aaea734e9/async-0.6.2.tar.gz", hash = "sha256:ac6894d876e45878faae493b0cf61d0e28ec417334448ac0a6ea2229d8343051", size = 30177, upload-time = "2014-11-12T17:03:40.353Z" }
+
+[[package]]
 name = "asyncpg"
 version = "0.30.0"
 source = { registry = "https://pypi.org/simple" }
@@ -45,10 +51,12 @@ name = "backend"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "async" },
     { name = "asyncpg" },
     { name = "dotenv" },
     { name = "fastapi", extra = ["standard"] },
     { name = "pandas" },
+    { name = "pg" },
     { name = "psycopg2" },
     { name = "pydantic" },
     { name = "pydantic-core" },
@@ -60,10 +68,12 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "async", specifier = ">=0.6.2" },
     { name = "asyncpg", specifier = ">=0.30.0" },
     { name = "dotenv", specifier = ">=0.9.9" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.119.0" },
     { name = "pandas", specifier = ">=2.3.3" },
+    { name = "pg", specifier = ">=0.1" },
     { name = "psycopg2", specifier = ">=2.9.11" },
     { name = "pydantic", specifier = "==2.9.2" },
     { name = "pydantic-core", specifier = "==2.23.4" },
@@ -468,6 +478,16 @@ wheels = [
 ]
 
 [[package]]
+name = "pg"
+version = "0.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pillow" },
+    { name = "pyopengl" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e1/9e/6b841cb7031457a258842c31afa356b877ca8176eb9d7fb7b99adaafe331/pg-0.1.tar.gz", hash = "sha256:7ef8ad166b767bff69c577a58c8b477dd37ad076ffd7b6a181c011fa743c9a8e", size = 30687, upload-time = "2014-09-07T02:48:42.321Z" }
+
+[[package]]
 name = "pillow"
 version = "12.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -584,6 +604,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/b0/77/a5b8c569bf593b0140bde72ea885a803b82086995367bf2037de0159d924/pygments-2.19.2.tar.gz", hash = "sha256:636cb2477cec7f8952536970bc533bc43743542f70392ae026374600add5b887", size = 4968631, upload-time = "2025-06-21T13:39:12.283Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c7/21/705964c7812476f378728bdf590ca4b771ec72385c533964653c68e86bdc/pygments-2.19.2-py3-none-any.whl", hash = "sha256:86540386c03d588bb81d44bc3928634ff26449851e99741617ecb9037ee5ec0b", size = 1225217, upload-time = "2025-06-21T13:39:07.939Z" },
+]
+
+[[package]]
+name = "pyopengl"
+version = "3.1.10"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/6f/16/912b7225d56284859cd9a672827f18be43f8012f8b7b932bc4bd959a298e/pyopengl-3.1.10.tar.gz", hash = "sha256:c4a02d6866b54eb119c8e9b3fb04fa835a95ab802dd96607ab4cdb0012df8335", size = 1915580, upload-time = "2025-08-18T02:33:01.76Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/de/e4/1ba6f44e491c4eece978685230dde56b14d51a0365bc1b774ddaa94d14cd/pyopengl-3.1.10-py3-none-any.whl", hash = "sha256:794a943daced39300879e4e47bd94525280685f42dbb5a998d336cfff151d74f", size = 3194996, upload-time = "2025-08-18T02:32:59.902Z" },
 ]
 
 [[package]]
