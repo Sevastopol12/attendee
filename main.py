@@ -9,15 +9,29 @@ from utils.management_sys import connected_clients
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # On start-up
     tasks = [
         # Create schem & tables
         asyncio.create_task(create_schema_and_table()),
         # Fetch data on initial
         asyncio.create_task(connected_clients.fetch_db()),
+        # Establish real-time connection with Supabase
+        asyncio.create_task(connected_clients.establish_connection()),
     ]
     await asyncio.gather(*tasks, return_exceptions=True)
 
     yield
+
+    # On end
+    tasks = [
+        # Disconnect from the channel
+        asyncio.create_task(connected_clients.unsubscribe_channel()),
+        asyncio.create_task(
+            connected_clients.remove_client(connected_clients.active_clients)
+        ),
+    ]
+
+    await asyncio.gather(*tasks, return_exceptions=True)
 
 
 app = FastAPI(lifespan=lifespan)
@@ -60,8 +74,6 @@ async def ws_endpoint(ws_client: WebSocket):
             if not status:
                 # If already presented, no broadcast needed
                 continue
-
-            await connected_clients.schedule_broadcast_action()
 
         except (WebSocketDisconnect, Exception) as e:
             print(e)
