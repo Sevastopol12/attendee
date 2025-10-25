@@ -12,7 +12,7 @@ async def create_schema_and_table() -> None:
         attendee_table: Table = Table(
             "presence",
             metadata,
-            Column("seat", String, unique=True, nullable=False, primary_key=True),
+            Column("unit", String, unique=True, nullable=False, primary_key=True),
             Column("name", String, nullable=False),
             Column("check_in", String, nullable=False),
             schema="attendees",
@@ -23,11 +23,11 @@ async def create_schema_and_table() -> None:
         )
 
 
-async def presence_check(seat: str) -> List[RowMapping]:
+async def presence_check(unit: str) -> List[RowMapping]:
     async with connection.engine.connect() as conn:
-        stmt: str = """SELECT seat FROM attendees.presence WHERE seat = :pattern"""
+        stmt: str = """SELECT unit FROM attendees.presence WHERE unit = :pattern"""
         presented: List[Row] = (
-            await conn.execute(text(stmt), parameters={"pattern": seat})
+            await conn.execute(text(stmt), parameters={"pattern": unit})
         ).fetchall()
 
         return presented
@@ -39,12 +39,12 @@ async def insert_data(payload: Dict[str, Any]) -> bool:
         "%Y-%m-%d %H:%M"
     )
 
-    if await presence_check(seat=payload["seat"]):
+    if await presence_check(unit=payload["unit"]):
         # If present, no update
         return False
 
     insert_stmt: str = """
-    INSERT INTO attendees.presence (seat, name, check_in) VALUES (:seat, :name, :check_in)
+    INSERT INTO attendees.presence (unit, name, check_in) VALUES (:unit, :name, :check_in)
     """
 
     async with connection.engine.begin() as conn:
@@ -62,9 +62,9 @@ async def attended_count() -> List[Dict[Hashable, Any]]:
     async with connection.engine.connect() as conn:
         try:
             select_stmt: str = """
-            SELECT seat, name, check_in FROM attendees.presence 
+            SELECT unit, name, check_in FROM attendees.presence 
             WHERE 1=1
-            ORDER BY seat
+            ORDER BY unit
             """
 
             result: List[RowMapping] = (

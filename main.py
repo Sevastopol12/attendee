@@ -14,9 +14,9 @@ async def lifespan(app: FastAPI):
         # Create schem & tables
         asyncio.create_task(create_schema_and_table()),
         # Fetch data on initial
-        asyncio.create_task(connected_clients.fetch_db()),
+        # asyncio.create_task(connected_clients.fetch_db()),
         # Establish real-time connection with Supabase
-        asyncio.create_task(connected_clients.establish_connection()),
+        # asyncio.create_task(connected_clients.establish_connection()),
     ]
     await asyncio.gather(*tasks, return_exceptions=True)
 
@@ -65,8 +65,8 @@ async def ws_endpoint(ws_client: WebSocket):
             print(f"Received: {attendee_info}")
             info_payload = json.loads(attendee_info)
 
-            if not all(k in info_payload for k in ("seat", "name")):
-                await ws_client.send_text("Missing required keys: seat, name")
+            if not all(k in info_payload for k in ("unit", "name")):
+                await ws_client.send_text("Missing required keys: unit, name")
                 continue
 
             # Insert data
